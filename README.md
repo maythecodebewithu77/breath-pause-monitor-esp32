@@ -102,7 +102,7 @@ Both I2C sensors share the primary ESP32 hardware I2C bus:
 ### Commands
 ```bash
 # Clone the repository
-git clone https://github.com/<your-username>/breath-pause-monitor-esp32.git
+git clone https://github.com/maythecodebewithu77/breath-pause-monitor-esp32.git
 cd breath-pause-monitor-esp32
 
 # Build the firmware
