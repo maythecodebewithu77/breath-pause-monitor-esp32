@@ -1,0 +1,23 @@
+# Project Licensing
+
+Project: Wearable Breathing Pause Monitor (learning prototype)
+Author: Vigneshwar S, 2nd-year ECE student at SRM Institute of Science and Technology
+
+## Code License
+All source code in this repository (firmware, web dashboard, automated test suites, and helper scripts) is licensed under the MIT License.
+SPDX-License-Identifier: MIT
+License details: https://opensource.org/licenses/MIT
+
+Copyright (c) 2026 Vigneshwar S
+
+## Documentation & Hardware License
+All written documentation, wiring diagrams, bill of materials, PCB guidelines, and experimental protocols are licensed under the Creative Commons Attribution 4.0 International License.
+SPDX-License-Identifier: CC-BY-4.0
+License details: https://creativecommons.org/licenses/by/4.0/
+
+## Non-Medical Research & Educational Disclaimer
+This hardware and firmware repository is developed solely for educational experimentation, wearable sensor skill building, and academic demonstration.
+
+1. NOT A MEDICAL DEVICE: This prototype is not a certified medical device and has not received regulatory clearance or approval from the FDA, CDSCO, CE, or any health authority.
+2. NO DIAGNOSTIC CLAIM: This device must never be used to diagnose, treat, mitigate, or monitor sleep apnea, hypoxemia, arrhythmia, or any other physiological condition.
+3. PROTOTYPE ALERT: The system generates an experimental "breathing pause alert (prototype)" for educational observation of chest motion dynamics only.
