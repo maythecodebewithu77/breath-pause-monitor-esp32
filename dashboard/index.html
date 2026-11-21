@@ -1,0 +1,1128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wearable Breathing Pause Monitor (Learning Prototype)</title>
+  <style>
+    :root {
+      --bg-primary: #0f172a;
+      --bg-secondary: #1e293b;
+      --bg-card: #1e293b;
+      --bg-card-hover: #334155;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --border-color: #334155;
+      --accent-blue: #38bdf8;
+      --accent-cyan: #06b6d4;
+      --accent-green: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-red: #ef4444;
+      --accent-purple: #8b5cf6;
+      --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --card-radius: 12px;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -2px rgba(0, 0, 0, 0.2);
+    }
+
+    [data-theme="light"] {
+      --bg-primary: #f1f5f9;
+      --bg-secondary: #ffffff;
+      --bg-card: #ffffff;
+      --bg-card-hover: #f8fafc;
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --text-muted: #94a3b8;
+      --border-color: #e2e8f0;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-family);
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.5;
+      padding: 16px;
+      transition: background-color 0.2s ease, color 0.2s ease;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* Header Bar */
+    header {
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--card-radius);
+      padding: 16px 20px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      box-shadow: var(--shadow);
+    }
+
+    .header-title {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .header-title h1 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .header-title p {
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+    }
+
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background-color: var(--accent-blue);
+      color: #0f172a;
+    }
+    .btn-primary:hover {
+      background-color: #0284c7;
+      color: #ffffff;
+    }
+
+    .btn-danger {
+      background-color: var(--accent-red);
+      color: #ffffff;
+    }
+    .btn-danger:hover {
+      background-color: #dc2626;
+    }
+
+    .btn-secondary {
+      background-color: var(--bg-card-hover);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+    }
+    .btn-secondary:hover {
+      background-color: var(--border-color);
+    }
+
+    .theme-toggle {
+      background: none;
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      padding: 7px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+
+    /* Notice Banner */
+    .notice-banner {
+      background-color: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      color: #f59e0b;
+      padding: 10px 16px;
+      border-radius: var(--card-radius);
+      font-size: 0.82rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .simulated-banner {
+      display: none;
+      background-color: rgba(139, 92, 246, 0.2);
+      border: 1px solid var(--accent-purple);
+      color: #c4b5fd;
+      padding: 8px 14px;
+      border-radius: var(--card-radius);
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-align: center;
+      animation: pulse 2s infinite ease-in-out;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.9; }
+      50% { opacity: 0.5; }
+    }
+
+    /* Active Pause Alert Banner */
+    .pause-alert-box {
+      display: none;
+      background-color: rgba(239, 68, 68, 0.18);
+      border: 2px solid var(--accent-red);
+      color: #fca5a5;
+      padding: 14px 20px;
+      border-radius: var(--card-radius);
+      text-align: center;
+      font-weight: 700;
+      font-size: 1.05rem;
+      animation: blinkRed 1.2s infinite ease-in-out;
+    }
+
+    @keyframes blinkRed {
+      0%, 100% { border-color: var(--accent-red); box-shadow: 0 0 10px rgba(239, 68, 68, 0.4); }
+      50% { border-color: rgba(239, 68, 68, 0.3); box-shadow: none; }
+    }
+
+    /* Grid of Metric Cards */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 14px;
+    }
+
+    .card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--card-radius);
+      padding: 16px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .card-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.6px;
+      color: var(--text-muted);
+    }
+
+    .card-icon {
+      font-size: 1.1rem;
+    }
+
+    .card-value-group {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      margin: 4px 0;
+    }
+
+    .card-value {
+      font-size: 2.2rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .card-unit {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      font-weight: 600;
+    }
+
+    .card-subtext {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      margin-top: 4px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 9999px;
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .badge-optimal { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+    .badge-degraded { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+    .badge-invalid { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+
+    /* Graph Section */
+    .graph-section {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--card-radius);
+      padding: 16px 20px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .graph-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .graph-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .canvas-container {
+      width: 100%;
+      height: 220px;
+      position: relative;
+      background-color: rgba(15, 23, 42, 0.3);
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border-color);
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Pause Events Table & Logs */
+    .log-section {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--card-radius);
+      padding: 16px 20px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .log-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .table-container {
+      max-height: 200px;
+      overflow-y: auto;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.8rem;
+      text-align: left;
+    }
+
+    th {
+      background-color: var(--bg-secondary);
+      color: var(--text-secondary);
+      font-weight: 600;
+      padding: 8px 12px;
+      position: sticky;
+      top: 0;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    td {
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-primary);
+      font-variant-numeric: tabular-nums;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover td {
+      background-color: var(--bg-card-hover);
+    }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      padding: 12px 0 24px;
+    }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      .header-controls {
+        width: 100%;
+        justify-content: space-between;
+      }
+      .card-value {
+        font-size: 1.8rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- Header -->
+  <header>
+    <div class="header-title">
+      <h1>🫁 BreathPause ESP32</h1>
+      <p>Wearable Breathing Pause Monitor (Learning Prototype) &bull; Author: Vigneshwar S</p>
+    </div>
+    <div class="header-controls">
+      <button id="btnConnect" class="btn btn-primary">⚡ Connect Monitor</button>
+      <button id="btnSimulate" class="btn btn-secondary">🧪 Demo / Sim Mode</button>
+      <button id="btnTheme" class="theme-toggle" title="Toggle Light/Dark Theme">🌓</button>
+    </div>
+  </header>
+
+  <!-- Non-Medical Disclaimer Banner -->
+  <div class="notice-banner">
+    <div>
+      <strong>⚠️ Non-Medical Prototype Notice:</strong>
+      This web application and connected wearable hardware are strictly for educational experimentation and engineering coursework. It is <strong>NOT</strong> a certified medical device and must never be used to diagnose, monitor, or treat sleep apnea or any medical condition.
+    </div>
+  </div>
+
+  <!-- Simulated Data Banner -->
+  <div id="simulatedBanner" class="simulated-banner">
+    ⚠️ SIMULATED DATA ACTIVE &bull; Generating Synthetic Physiological Waves (Demo Mode)
+  </div>
+
+  <!-- Breathing Pause Alert Banner -->
+  <div id="pauseAlertBanner" class="pause-alert-box">
+    🚨 BREATHING PAUSE ALERT (PROTOTYPE) ACTIVE &bull; Duration: <span id="pauseDurationCounter">0</span> s
+  </div>
+
+  <!-- Metric Cards Grid -->
+  <div class="metrics-grid">
+
+    <!-- Breathing Rate Card -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-label">Breathing Rate</span>
+        <span class="card-icon">🫁</span>
+      </div>
+      <div class="card-value-group">
+        <span id="valBreathingRate" class="card-value">--</span>
+        <span class="card-unit">BPM</span>
+      </div>
+      <div class="card-subtext">
+        <span id="rateStatusText">Awaiting Signal...</span>
+      </div>
+    </div>
+
+    <!-- Heart Rate Card -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-label">Pulse (Heart Rate)</span>
+        <span class="card-icon">❤️</span>
+      </div>
+      <div class="card-value-group">
+        <span id="valHeartRate" class="card-value">--</span>
+        <span class="card-unit">BPM</span>
+      </div>
+      <div class="card-subtext">
+        <span id="pulseQualityBadge" class="badge badge-invalid">No Sensor</span>
+      </div>
+    </div>
+
+    <!-- Blood Oxygen (SpO2) Card -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-label">Blood Oxygen (SpO2)</span>
+        <span class="card-icon">🩸</span>
+      </div>
+      <div class="card-value-group">
+        <span id="valSpO2" class="card-value">--</span>
+        <span class="card-unit">%</span>
+      </div>
+      <div class="card-subtext">
+        <span id="spo2QualityText">Signal invalid (check skin contact)</span>
+      </div>
+    </div>
+
+    <!-- Body Position Card -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-label">Body Position</span>
+        <span class="card-icon">🧭</span>
+      </div>
+      <div class="card-value-group">
+        <span id="valPosition" class="card-value" style="font-size: 1.4rem;">--</span>
+      </div>
+      <div class="card-subtext">
+        <span id="posDetailText">Accelerometer Tilt</span>
+      </div>
+    </div>
+
+    <!-- Battery Card -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-label">Battery Level</span>
+        <span class="card-icon">🔋</span>
+      </div>
+      <div class="card-value-group">
+        <span id="valBattery" class="card-value">--</span>
+        <span class="card-unit">%</span>
+      </div>
+      <div class="card-subtext">
+        <span id="batteryStatusText">LiPo 1S ~3.7V</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Live Canvas Waveform -->
+  <div class="graph-section">
+    <div class="graph-header">
+      <div class="graph-title">
+        <span>📈 Chest Displacement & Respiratory Motion</span>
+        <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal;">(MPU-6050 Filtered Motion Waveform, ~25 Hz)</span>
+      </div>
+      <div style="font-size: 0.8rem; color: var(--text-secondary);">
+        Active Connection: <strong id="bleStatusText">Disconnected</strong>
+      </div>
+    </div>
+    <div class="canvas-container">
+      <canvas id="breathCanvas"></canvas>
+    </div>
+  </div>
+
+  <!-- Pause Events Timeline & Session Log -->
+  <div class="log-section">
+    <div class="log-header">
+      <div class="graph-title">
+        <span>📋 Breathing Pause Event Timeline & Telemetry Log</span>
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <button id="btnDownloadCsv" class="btn btn-secondary">💾 Download CSV</button>
+        <button id="btnClearLog" class="btn btn-secondary">🗑️ Clear</button>
+      </div>
+    </div>
+    <div class="table-container">
+      <table id="eventTable">
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Event Description</th>
+            <th>Duration</th>
+            <th>Posture</th>
+            <th>Breathing Rate</th>
+            <th>SpO2 / HR</th>
+          </tr>
+        </thead>
+        <tbody id="eventTableBody">
+          <tr>
+            <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 16px;">
+              No breathing pause events recorded yet. Connect monitor or start Demo Mode to observe events.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    Wearable Breathing Pause Monitor (breath-pause-monitor-esp32) &bull; Open-Source Learning Prototype &bull; SRM IST ECE
+  </footer>
+
+</div>
+
+<script>
+/**
+ * BreathPause Web Bluetooth Client & Canvas Visualization Engine
+ * Pure self-contained Vanilla JS. No external dependencies.
+ */
+
+// UUID Configurations matching config.h
+const BLE_SERVICE_UUID          = "19b10000-e8f2-537e-4f6c-d104768a1214";
+const BLE_CHAR_TELEMETRY_UUID   = "19b10001-e8f2-537e-4f6c-d104768a1214";
+const BLE_CHAR_PAUSE_ALERT_UUID = "19b10002-e8f2-537e-4f6c-d104768a1214";
+
+// Application State
+let bleDevice = null;
+let bleServer = null;
+let telemetryChar = null;
+let pauseAlertChar = null;
+let isConnected = false;
+let isSimulating = false;
+let simIntervalTimer = null;
+
+// Telemetry Buffers
+const MAX_GRAPH_POINTS = 300;
+const breathWaveHistory = new Array(MAX_GRAPH_POINTS).fill(0.0);
+const pauseStateHistory = new Array(MAX_GRAPH_POINTS).fill(false);
+const sessionLogBuffer = [];
+
+// DOM Elements
+const btnConnect = document.getElementById("btnConnect");
+const btnSimulate = document.getElementById("btnSimulate");
+const btnTheme = document.getElementById("btnTheme");
+const btnDownloadCsv = document.getElementById("btnDownloadCsv");
+const btnClearLog = document.getElementById("btnClearLog");
+const bleStatusText = document.getElementById("bleStatusText");
+const simulatedBanner = document.getElementById("simulatedBanner");
+const pauseAlertBanner = document.getElementById("pauseAlertBanner");
+const pauseDurationCounter = document.getElementById("pauseDurationCounter");
+
+const valBreathingRate = document.getElementById("valBreathingRate");
+const rateStatusText = document.getElementById("rateStatusText");
+const valHeartRate = document.getElementById("valHeartRate");
+const pulseQualityBadge = document.getElementById("pulseQualityBadge");
+const valSpO2 = document.getElementById("valSpO2");
+const spo2QualityText = document.getElementById("spo2QualityText");
+const valPosition = document.getElementById("valPosition");
+const posDetailText = document.getElementById("posDetailText");
+const valBattery = document.getElementById("valBattery");
+const batteryStatusText = document.getElementById("batteryStatusText");
+const eventTableBody = document.getElementById("eventTableBody");
+
+const canvas = document.getElementById("breathCanvas");
+const ctx = canvas.getContext("2d");
+
+// Helper: Posture Enum to String
+function getPostureString(posEnum) {
+  switch (posEnum) {
+    case 1: return "Supine (Back)";
+    case 2: return "Prone (Chest)";
+    case 3: return "Left Lateral";
+    case 4: return "Right Lateral";
+    case 5: return "Upright";
+    default: return "Unknown / Moving";
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Web Bluetooth Connection
+// -----------------------------------------------------------------------------
+async function toggleBluetoothConnection() {
+  if (isSimulating) {
+    stopSimulation();
+  }
+
+  if (isConnected) {
+    disconnectBluetooth();
+    return;
+  }
+
+  if (!navigator.bluetooth) {
+    alert("Web Bluetooth API is not supported in this browser. Please open this file in Google Chrome (Desktop or Android) over HTTPS or file://.");
+    return;
+  }
+
+  try {
+    bleStatusText.textContent = "Requesting device...";
+    bleDevice = await navigator.bluetooth.requestDevice({
+      filters: [{ namePrefix: "BreathPause" }],
+      optionalServices: [BLE_SERVICE_UUID]
+    });
+
+    bleDevice.addEventListener("gattserverdisconnected", onDisconnected);
+    bleStatusText.textContent = "Connecting to GATT Server...";
+
+    bleServer = await bleDevice.gatt.connect();
+    const service = await bleServer.getPrimaryService(BLE_SERVICE_UUID);
+
+    // Subscribe to Telemetry Notifications
+    telemetryChar = await service.getCharacteristic(BLE_CHAR_TELEMETRY_UUID);
+    await telemetryChar.startNotifications();
+    telemetryChar.addEventListener("characteristicvaluechanged", handleTelemetryNotification);
+
+    // Subscribe to Pause Alert Notifications
+    try {
+      pauseAlertChar = await service.getCharacteristic(BLE_CHAR_PAUSE_ALERT_UUID);
+      await pauseAlertChar.startNotifications();
+      pauseAlertChar.addEventListener("characteristicvaluechanged", handlePauseAlertNotification);
+    } catch (e) {
+      console.warn("Pause alert characteristic optional:", e);
+    }
+
+    isConnected = true;
+    btnConnect.textContent = "🔌 Disconnect";
+    btnConnect.classList.remove("btn-primary");
+    btnConnect.classList.add("btn-danger");
+    bleStatusText.textContent = `Connected (${bleDevice.name || "ESP32"})`;
+
+  } catch (err) {
+    console.error("Bluetooth connection error:", err);
+    bleStatusText.textContent = "Connection failed";
+    disconnectBluetooth();
+  }
+}
+
+function disconnectBluetooth() {
+  if (bleDevice && bleDevice.gatt.connected) {
+    bleDevice.gatt.disconnect();
+  }
+  onDisconnected();
+}
+
+function onDisconnected() {
+  isConnected = false;
+  btnConnect.textContent = "⚡ Connect Monitor";
+  btnConnect.classList.remove("btn-danger");
+  btnConnect.classList.add("btn-primary");
+  bleStatusText.textContent = "Disconnected";
+  pauseAlertBanner.style.display = "none";
+}
+
+// -----------------------------------------------------------------------------
+// Binary Packet Parser
+// -----------------------------------------------------------------------------
+function handleTelemetryNotification(event) {
+  const value = event.target.value;
+  if (value.byteLength < 17) {
+    console.warn("Telemetry packet too short:", value.byteLength);
+    return;
+  }
+
+  // Parse binary layout matching struct TelemetryPacket in config.h:
+  // uint32 timestamp_ms       (0..3)
+  // float32 breath_wave       (4..7)
+  // uint8   breathing_rate_bpm(8)
+  // uint8   pause_active      (9)
+  // uint16  pause_duration_s  (10..11)
+  // uint8   heart_rate_bpm    (12)
+  // uint8   spo2_percent      (13)
+  // uint8   signal_quality    (14)
+  // uint8   body_position     (15)
+  // uint8   battery_percent   (16)
+  // uint8   is_simulated      (17, if present)
+
+  const timestampMs = value.getUint32(0, true);
+  const breathWave = value.getFloat32(4, true);
+  const breathRate = value.getUint8(8);
+  const pauseActive = value.getUint8(9) === 1;
+  const pauseDuration = value.getUint16(10, true);
+  const heartRate = value.getUint8(12);
+  const spo2 = value.getUint8(13);
+  const quality = value.getUint8(14);
+  const bodyPos = value.getUint8(15);
+  const battery = value.getUint8(16);
+  const isSim = (value.byteLength >= 18) ? (value.getUint8(17) === 1) : false;
+
+  updateDashboardData({
+    timestampMs,
+    breathWave,
+    breathRate,
+    pauseActive,
+    pauseDuration,
+    heartRate,
+    spo2,
+    quality,
+    bodyPos,
+    battery,
+    isSim
+  });
+}
+
+function handlePauseAlertNotification(event) {
+  const value = event.target.value;
+  if (value.byteLength < 8) return;
+
+  const timestampMs = value.getUint32(0, true);
+  const eventType = value.getUint8(4); // 1 = Start, 2 = Cleared
+  const durationS = value.getUint16(5, true);
+  const bodyPos = value.getUint8(7);
+
+  const desc = (eventType === 1) 
+    ? "🚨 Breathing Pause Triggered (prototype)" 
+    : "✅ Breathing Resumed (Pause Cleared)";
+
+  addTimelineTableRow(new Date().toLocaleTimeString(), desc, `${durationS} s`, getPostureString(bodyPos));
+}
+
+// -----------------------------------------------------------------------------
+// Dashboard UI Updater
+// -----------------------------------------------------------------------------
+function updateDashboardData(data) {
+  // Push wave point into graph circular buffer
+  breathWaveHistory.push(data.breathWave);
+  breathWaveHistory.shift();
+  pauseStateHistory.push(data.pauseActive);
+  pauseStateHistory.shift();
+
+  // Simulated Banner
+  simulatedBanner.style.display = data.isSim ? "block" : "none";
+
+  // Breathing Rate Card
+  if (data.breathRate > 0) {
+    valBreathingRate.textContent = data.breathRate;
+    rateStatusText.textContent = data.pauseActive ? "Movement Ceased" : "Normal Respiration";
+  } else {
+    valBreathingRate.textContent = "--";
+    rateStatusText.textContent = "Calculating rate...";
+  }
+
+  // Pause Alert Banner
+  if (data.pauseActive) {
+    pauseAlertBanner.style.display = "block";
+    pauseDurationCounter.textContent = data.pauseDuration;
+  } else {
+    pauseAlertBanner.style.display = "none";
+  }
+
+  // Heart Rate & SpO2 Cards with Signal Quality Assessment
+  if (data.quality === 2) { // OPTIMAL
+    valHeartRate.textContent = data.heartRate > 0 ? data.heartRate : "--";
+    pulseQualityBadge.textContent = "Signal Optimal";
+    pulseQualityBadge.className = "badge badge-optimal";
+
+    valSpO2.textContent = data.spo2 > 0 ? data.spo2 : "--";
+    spo2QualityText.textContent = "Stable arterial optical track";
+  } else if (data.quality === 1) { // DEGRADED
+    valHeartRate.textContent = data.heartRate > 0 ? data.heartRate : "--";
+    pulseQualityBadge.textContent = "Weak / Motion";
+    pulseQualityBadge.className = "badge badge-degraded";
+
+    valSpO2.textContent = data.spo2 > 0 ? data.spo2 : "--";
+    spo2QualityText.textContent = "Motion artifact detected";
+  } else { // INVALID / NO CONTACT
+    valHeartRate.textContent = "--";
+    pulseQualityBadge.textContent = "Signal Invalid";
+    pulseQualityBadge.className = "badge badge-invalid";
+
+    valSpO2.textContent = "--";
+    spo2QualityText.textContent = "No skin contact / optical fault";
+  }
+
+  // Body Position
+  valPosition.textContent = getPostureString(data.bodyPos);
+
+  // Battery Level
+  valBattery.textContent = data.battery;
+  if (data.battery <= 15) {
+    batteryStatusText.innerHTML = "<span style='color: var(--accent-red); font-weight: bold;'>⚠️ Low Battery Warning</span>";
+  } else {
+    batteryStatusText.textContent = "LiPo ~3.7V Nominal";
+  }
+
+  // Buffer Record for CSV Download
+  sessionLogBuffer.push({
+    timestamp_ms: data.timestampMs,
+    time_iso: new Date().toISOString(),
+    breath_wave: data.breathWave.toFixed(4),
+    breath_rate: data.breathRate,
+    pause_active: data.pauseActive ? 1 : 0,
+    pause_duration: data.pauseDuration,
+    heart_rate: data.heartRate,
+    spo2: data.spo2,
+    quality: data.quality,
+    position: getPostureString(data.bodyPos),
+    battery: data.battery,
+    is_simulated: data.isSim ? 1 : 0
+  });
+
+  // Limit CSV buffer in RAM to last 10,000 points (~2.5 hours)
+  if (sessionLogBuffer.length > 10000) sessionLogBuffer.shift();
+}
+
+function addTimelineTableRow(timeStr, desc, durStr, postureStr) {
+  const row = document.createElement("tr");
+  row.innerHTML = `
+    <td><strong>${timeStr}</strong></td>
+    <td>${desc}</td>
+    <td>${durStr}</td>
+    <td>${postureStr}</td>
+    <td>${valBreathingRate.textContent} BPM</td>
+    <td>${valSpO2.textContent}% / ${valHeartRate.textContent} BPM</td>
+  `;
+
+  // Remove placeholder if present
+  if (eventTableBody.children.length === 1 && eventTableBody.children[0].children.length === 1) {
+    eventTableBody.innerHTML = "";
+  }
+
+  eventTableBody.insertBefore(row, eventTableBody.firstChild);
+}
+
+// -----------------------------------------------------------------------------
+// Interactive Demo / Simulation Engine
+// -----------------------------------------------------------------------------
+let simPhase = 0;
+let simCycleTick = 0;
+let simPauseActive = false;
+let simPauseDuration = 0;
+
+function toggleSimulation() {
+  if (isConnected) disconnectBluetooth();
+
+  if (isSimulating) {
+    stopSimulation();
+  } else {
+    startSimulation();
+  }
+}
+
+function startSimulation() {
+  isSimulating = true;
+  btnSimulate.textContent = "⏹️ Stop Demo";
+  btnSimulate.classList.add("btn-danger");
+  bleStatusText.textContent = "Simulation Engine Running";
+  simulatedBanner.style.display = "block";
+
+  simIntervalTimer = setInterval(() => {
+    simCycleTick++;
+    // Cycle every 35 seconds: 23s normal breathing, 12s breathing pause
+    const cycleStep = simCycleTick % 35;
+
+    let simWave = 0;
+    if (cycleStep < 23) {
+      if (simPauseActive) {
+        // Pause just cleared
+        simPauseActive = false;
+        addTimelineTableRow(new Date().toLocaleTimeString(), "✅ Breathing Resumed (Pause Cleared)", `${simPauseDuration} s`, "Supine (Back)");
+      }
+      simPhase += 0.25;
+      simWave = 0.15 * Math.sin(simPhase) + (Math.random() - 0.5) * 0.02;
+      simPauseDuration = 0;
+    } else {
+      if (!simPauseActive && simPauseDuration >= 10) {
+        // Pause triggered
+        simPauseActive = true;
+        addTimelineTableRow(new Date().toLocaleTimeString(), "🚨 Breathing Pause Triggered (prototype)", "10 s", "Supine (Back)");
+      }
+      simWave = (Math.random() - 0.5) * 0.008; // Flatline chest motion
+      simPauseDuration = cycleStep - 23 + 1;
+    }
+
+    updateDashboardData({
+      timestampMs: Date.now(),
+      breathWave: simWave,
+      breathRate: simPauseActive ? 0 : 15,
+      pauseActive: simPauseActive,
+      pauseDuration: simPauseDuration,
+      heartRate: 72 + Math.floor(Math.sin(simCycleTick * 0.1) * 3),
+      spo2: 98,
+      quality: 2, // Optimal
+      bodyPos: 1, // Supine
+      battery: 84,
+      isSim: true
+    });
+  }, 100); // 10 Hz simulation update
+}
+
+function stopSimulation() {
+  isSimulating = false;
+  clearInterval(simIntervalTimer);
+  btnSimulate.textContent = "🧪 Demo / Sim Mode";
+  btnSimulate.classList.remove("btn-danger");
+  simulatedBanner.style.display = "none";
+  pauseAlertBanner.style.display = "none";
+  bleStatusText.textContent = "Disconnected";
+}
+
+// -----------------------------------------------------------------------------
+// Canvas Real-Time Waveform Rendering Engine
+// -----------------------------------------------------------------------------
+function resizeCanvas() {
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * window.devicePixelRatio;
+  canvas.height = rect.height * window.devicePixelRatio;
+  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+}
+window.addEventListener("resize", resizeCanvas);
+resizeCanvas();
+
+function drawWaveform() {
+  const width = canvas.clientWidth;
+  const height = canvas.clientHeight;
+
+  ctx.clearRect(0, 0, width, height);
+
+  // Draw Horizontal Baseline & Grid
+  const centerY = height / 2;
+  ctx.strokeStyle = "rgba(148, 163, 184, 0.15)";
+  ctx.lineWidth = 1;
+
+  ctx.beginPath();
+  ctx.moveTo(0, centerY);
+  ctx.lineTo(width, centerY);
+  ctx.stroke();
+
+  // Grid subdivisions
+  ctx.beginPath();
+  ctx.moveTo(0, centerY - height * 0.3);
+  ctx.lineTo(width, centerY - height * 0.3);
+  ctx.moveTo(0, centerY + height * 0.3);
+  ctx.lineTo(width, centerY + height * 0.3);
+  ctx.stroke();
+
+  // Draw Waveform Line
+  const step = width / (MAX_GRAPH_POINTS - 1);
+  const scale = height * 1.8; // Amplitude scaling factor
+
+  // Fill gradient under wave
+  const isDark = document.documentElement.getAttribute("data-theme") !== "light";
+  const waveGradient = ctx.createLinearGradient(0, 0, 0, height);
+  if (isDark) {
+    waveGradient.addColorStop(0, "rgba(56, 189, 248, 0.4)");
+    waveGradient.addColorStop(1, "rgba(56, 189, 248, 0.0)");
+  } else {
+    waveGradient.addColorStop(0, "rgba(2, 132, 199, 0.25)");
+    waveGradient.addColorStop(1, "rgba(2, 132, 199, 0.0)");
+  }
+
+  ctx.beginPath();
+  ctx.moveTo(0, centerY - breathWaveHistory[0] * scale);
+  for (let i = 1; i < MAX_GRAPH_POINTS; i++) {
+    const x = i * step;
+    const y = centerY - breathWaveHistory[i] * scale;
+    ctx.lineTo(x, y);
+  }
+
+  // Stroke Line
+  ctx.strokeStyle = "#38bdf8";
+  ctx.lineWidth = 2.2;
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  ctx.stroke();
+
+  // Highlight Pause Zone
+  const lastIndex = MAX_GRAPH_POINTS - 1;
+  if (pauseStateHistory[lastIndex]) {
+    ctx.fillStyle = "rgba(239, 68, 68, 0.15)";
+    ctx.fillRect(width - 60, 0, 60, height);
+    ctx.fillStyle = "#ef4444";
+    ctx.font = "bold 11px sans-serif";
+    ctx.fillText("PAUSE", width - 50, 20);
+  }
+
+  requestAnimationFrame(drawWaveform);
+}
+requestAnimationFrame(drawWaveform);
+
+// -----------------------------------------------------------------------------
+// CSV Session Export
+// -----------------------------------------------------------------------------
+function downloadCsv() {
+  if (sessionLogBuffer.length === 0) {
+    alert("No telemetry data recorded in this session yet.");
+    return;
+  }
+
+  const headers = [
+    "Timestamp_ms",
+    "Time_ISO",
+    "Breath_Wave",
+    "Breathing_Rate_BPM",
+    "Pause_Active",
+    "Pause_Duration_s",
+    "Heart_Rate_BPM",
+    "SpO2_Percent",
+    "Signal_Quality",
+    "Body_Position",
+    "Battery_Percent",
+    "Is_Simulated"
+  ];
+
+  const rows = sessionLogBuffer.map(r => [
+    r.timestamp_ms,
+    r.time_iso,
+    r.breath_wave,
+    r.breath_rate,
+    r.pause_active,
+    r.pause_duration,
+    r.heart_rate,
+    r.spo2,
+    r.quality,
+    `"${r.position}"`,
+    r.battery,
+    r.is_simulated
+  ].join(","));
+
+  const csvContent = [headers.join(","), ...rows].join("\n");
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const timestampStr = new Date().toISOString().replace(/[:.]/g, "-");
+  a.href = url;
+  a.download = `breath_monitor_telemetry_${timestampStr}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function clearLog() {
+  sessionLogBuffer.length = 0;
+  eventTableBody.innerHTML = `
+    <tr>
+      <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 16px;">
+        Log cleared. New events will appear here.
+      </td>
+    </tr>
+  `;
+}
+
+// -----------------------------------------------------------------------------
+// Light / Dark Theme Toggle
+// -----------------------------------------------------------------------------
+function toggleTheme() {
+  const current = document.documentElement.getAttribute("data-theme");
+  const next = (current === "light") ? "dark" : "light";
+  document.documentElement.setAttribute("data-theme", next);
+}
+
+// Event Listeners
+btnConnect.addEventListener("click", toggleBluetoothConnection);
+btnSimulate.addEventListener("click", toggleSimulation);
+btnTheme.addEventListener("click", toggleTheme);
+btnDownloadCsv.addEventListener("click", downloadCsv);
+btnClearLog.addEventListener("click", clearLog);
+
+</script>
+</body>
+</html>
