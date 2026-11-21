@@ -1,0 +1,68 @@
+{
+  "board": {
+    "design_settings": {
+      "rules": {
+        "max_error": 0.005,
+        "min_clearance": 0.2,
+        "min_copper_edge_clearance": 0.3,
+        "min_hole_clearance": 0.25,
+        "min_hole_to_hole": 0.25,
+        "min_microvia_diameter": 0.2,
+        "min_microvia_drill": 0.1,
+        "min_silk_clearance": 0.15,
+        "min_through_hole_diameter": 0.3,
+        "min_track_width": 0.2,
+        "min_via_annular_width": 0.15,
+        "min_via_diameter": 0.6
+      }
+    }
+  },
+  "boards": [],
+  "cvpcb": {
+    "equivalence_files": []
+  },
+  "erc": {
+    "erc_exclusions": [],
+    "meta": {
+      "version": 0
+    },
+    "severity_gnd": "warning",
+    "severity_global_label": "warning"
+  },
+  "libraries": {
+    "pinned_footprint_libs": [],
+    "pinned_symbol_libs": []
+  },
+  "meta": {
+    "filename": "breath-pause-monitor.kicad_pro",
+    "version": 1
+  },
+  "net_selector": {
+    "stand_alone": true
+  },
+  "pcbnew": {
+    "last_paths": {
+      "gencad": "",
+      "idf": "",
+      "netlist": "",
+      "specctra_dsn": "",
+      "step": "",
+      "vrml": ""
+    }
+  },
+  "schematic": {
+    "drawing": {
+      "default_line_thickness": 0.1524,
+      "default_text_size": 1.27
+    },
+    "legacy_lib_dir": "",
+    "legacy_lib_list": []
+  },
+  "sheets": [
+    [
+      "76ba7a07-0001-4000-8000-000000000001",
+      ""
+    ]
+  ],
+  "text_variables": {}
+}

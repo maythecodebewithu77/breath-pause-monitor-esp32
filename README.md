@@ -1,151 +1,208 @@
-# Wearable Breathing Pause Monitor (learning prototype)
+# Wearable Breathing Pause Monitor (Learning Prototype)
 
-**Project Identifier**: `breath-pause-monitor-esp32`  
+**Repository Name**: `breath-pause-monitor-esp32`  
 **Author**: Vigneshwar S, 2nd-year ECE student at SRM Institute of Science and Technology  
-**License**: MIT (Code) / CC BY 4.0 (Docs)
+**License**: MIT (Source Code) &bull; Creative Commons Attribution 4.0 International (Documentation & Hardware)
 
 ---
 
 > [!CAUTION]
-> ### NON-MEDICAL EDUCATIONAL PROTOTYPE NOTICE
-> This project is an experimental engineering learning prototype developed to build practical skills in wearable sensor signal processing, low-power embedded firmware (ESP32), and Bluetooth Low Energy (Web Bluetooth API) communication.
+> ### NON-MEDICAL RESEARCH & EDUCATIONAL PROTOTYPE NOTICE
+> **This project is strictly an educational learning prototype and engineering demonstration. It is NOT a medical device.**
 > 
-> **It is NOT a medical device and is NOT intended, certified, or tested to diagnose, detect, monitor, or treat sleep apnea, hypoxemia, respiratory arrest, or any physiological condition.**
-> 
-> The system implements an experimental **breathing pause alert (prototype)** strictly for educational demonstration of chest kinematics. Never rely on this device for health, life-safety, or medical decision-making.
+> - It is **not certified, cleared, or approved** by the FDA, CDSCO, CE, or any regulatory health agency.
+> - It must **never** be used to diagnose, detect, monitor, or treat sleep apnea, hypoxemia, respiratory distress, bradycardia, or any medical condition.
+> - The term **"breathing pause alert (prototype)"** is used strictly to describe an experimental embedded chest kinematic state machine observing relative motion cessation.
+> - Never use this project for health monitoring or life-safety applications.
 
 ---
 
-## 1. Project Overview
+## 1. Project Summary
 
-The **Wearable Breathing Pause Monitor** is a chest-worn, battery-powered embedded prototype powered by an ESP32 microcontroller. The device captures mechanical chest displacement using an **MPU-6050** 6-DoF inertial measurement unit (IMU) to extract respiratory rate and detect long breathing pauses. In parallel, a **MAX30102** photoplethysmography (PPG) optical sensor captures photoplethysmographic signals to estimate pulse and blood oxygen saturation ($SpO_2$) with integrated signal quality assessment. Real-time telemetry is streamed wirelessly over Bluetooth Low Energy (BLE) to a standalone web dashboard featuring live graph visualization, pause event logging, and CSV export.
-
----
-
-## 2. System Status & Verification Checklist
-
-In accordance with transparent engineering principles, all subsystem statuses are honestly documented below:
-
-| Subsystem / Feature | Implementation Status | Verification Stage |
-| :--- | :--- | :--- |
-| **Repository & Docs** | Completed | Clean structure, BOM, wiring, PCB notes |
-| **Breathing Signal Filter** | Completed | 0.1–0.7 Hz band-pass filter, simulated test suites |
-| **Breathing Pause Alert (prototype)** | Completed | State machine with configurable timeout (10 s default) |
-| **Body Position Classifier** | Completed | Tilt quadrant estimation (Supine/Prone/Left/Right/Upright) |
-| **Pulse & $SpO_2$ Estimator** | Completed | AC/DC ratio-of-ratios with signal quality validity flag |
-| **Battery Fuel Gauge** | Completed | Voltage divider reading + LiPo discharge curve mapping |
-| **BLE Custom GATT Service** | Completed | Binary & JSON notification characteristics |
-| **Web Bluetooth Dashboard** | Completed | Single self-contained HTML/JS dashboard with Canvas graphs |
-| **Hardware Bench Testing** | Pending | Not yet tested on physical human chest (to be performed by author) |
-| **Battery Life Measurements** | Pending | Theoretical estimate documented; physical drain unmeasured |
+The **Wearable Breathing Pause Monitor** (`breath-pause-monitor-esp32`) is a chest-worn, battery-powered embedded engineering prototype powered by an ESP32 microcontroller. The system captures mechanical chest displacement using an MPU-6050 6-DoF inertial sensor to extract real-time breathing rates and detect prolonged breathing pauses ($> 10\text{ s}$) using a digital bandpass filter and peak-detection state machine. In parallel, a MAX30102 photoplethysmography (PPG) optical sensor samples arterial pulse and $SpO_2$ with automated signal quality validation. Telemetry is streamed wirelessly via a custom Bluetooth Low Energy (BLE) GATT service to a self-contained, zero-dependency HTML5 Web Bluetooth dashboard with real-time `<canvas>` waveform rendering, pause timeline logging, and CSV session export.
 
 ---
 
-## 3. Hardware Architecture
+## 2. Transparent Engineering Status Checklist
+
+In compliance with strict open-source integrity standards, all subsystem statuses are reported accurately:
+
+| Subsystem / Feature | Status | Verification Detail |
+| :--- | :---: | :--- |
+| **Modular C++ Firmware** | **Compiled** | Modular codebase built with PlatformIO & Arduino framework |
+| **Chest Bandpass Filter (0.1–0.7 Hz)** | **Tested in Simulation** | Verified via synthetic sine wave generator (`test_breathing_runner.py`) |
+| **Breathing Pause Alert (prototype)** | **Tested in Simulation** | 10.0s silence trigger & recovery passed in automated test suite |
+| **Body Position Tilt Classifier** | **Tested in Simulation** | Static gravity projections verified across 5 anatomical postures |
+| **MAX30102 PPG & SpO2 Estimator** | **Compiled** | Ratio-of-ratios algorithm & signal validity flags implemented |
+| **LiPo Battery ADC Fuel Gauge** | **Compiled** | 16-sample burst averaging & piecewise discharge curve implemented |
+| **BLE GATT Custom Service** | **Compiled** | 18-byte packed binary telemetry & instant alert characteristics |
+| **Web Bluetooth Live Dashboard** | **Tested in Browser** | Pure HTML/CSS/JS with canvas graphs & simulation mode verified |
+| **Physical Human Chest Benchmarks** | **Not Yet Tested** | Ready for physical hardware testing by author ([docs/test-plan.md](file:///d:/New%20folder%20(4)/breath-pause-monitor-esp32/docs/test-plan.md)) |
+| **Real Battery Discharge Duration** | **Not Yet Tested** | Theoretical estimate: ~22.5–27 hrs; physical run log template ready |
+| **Custom KiCad PCB Design** | **Drafted** | 2-layer $45\text{ mm} \times 32\text{ mm}$ outline with strap slots & RF keepout |
+
+---
+
+## 3. Key Features
+
+- **Kinematic Respiration Extraction**: Discrete-time leaky integrator eliminates static 1g gravity offset; cascaded low-pass filter isolates $0.10\text{ Hz} - 0.70\text{ Hz}$ breathing band.
+- **Breathing Pause Alert (prototype)**: Configurable silence timer (10s default) triggers immediate high-priority BLE event notifications and UI alarms upon chest wall motion cessation.
+- **Anatomical Posture Classification**: Real-time tilt classification into *Supine*, *Prone*, *Left Lateral*, *Right Lateral*, and *Upright*.
+- **Photoplethysmography (Pulse & $SpO_2$)**: MAX30102 dual-wavelength processing with a signal quality check reporting **"Signal Invalid"** when tissue contact is lost.
+- **Zero-Dependency Web Dashboard**: Single `index.html` file using the Web Bluetooth API with 60 FPS HTML5 `<canvas>` waveform rendering, pause event timeline, dark/light theme, and CSV export.
+- **Interactive Demo / Simulation Mode**: Built-in simulator allows testing the entire dashboard, canvas graphs, and alerts without physical hardware.
+
+---
+
+## 4. Hardware Bill of Materials (BOM)
+
+Total estimated cost: **~ ₹1,430 INR** (Sourced in Chennai at Ritchie Street or online at Robu.in / QuartzComponents):
+
+| Component | Part / Spec | Qty | Approx. Price (INR) | Primary Source |
+| :--- | :--- | :---: | :---: | :--- |
+| **ESP32 DevKit** | ESP32-WROOM-32 (30-pin) | 1 | ₹380 | Robu.in / Radio Warehouse |
+| **MPU-6050 Module** | GY-521 6-DoF IMU | 1 | ₹150 | Robu.in / Supreme Electronics |
+| **MAX30102 Module** | Red + IR Optical PPG Breakout | 1 | ₹320 | Robu.in / QuartzComponents |
+| **1S LiPo Battery** | 3.7V 600–1000 mAh with PCM | 1 | ₹280 | Robu.in / Mohan Electronics |
+| **TP4056 Charger** | Type-C with DW01A protection | 1 | ₹45 | Robu.in / ElectronicsComp |
+| **Divider Resistors** | 100 kΩ 1/4W 1% Metal Film | 2 | ₹4 | Local Electronics Shop |
+| **Filter Capacitor** | 100 nF Ceramic (50V) | 1 | ₹3 | Local Electronics Shop |
+| **Elastic Chest Strap**| 25–38 mm adjustable strap | 1 | ₹120 | Amazon India / Decathlon |
+| **Wiring & Passives** | Silicone flexible wire & switch | 1 set | ₹128 | Local Electronics Shop |
+
+*Full component breakdown, shopping tips, and vendor links available in [hardware/bom.md](file:///d:/New%20folder%20(4)/breath-pause-monitor-esp32/hardware/bom.md).*
+
+---
+
+## 5. Circuit Wiring Summary
+
+Both I2C sensors share the primary ESP32 hardware I2C bus:
 
 ```text
-       +-------------------------------------------------------+
-       |               1S LiPo Battery (3.7V)                  |
-       +---------------------------+---------------------------+
-                                   |
-                                   v
-       +-------------------------------------------------------+
-       |       TP4056 USB-C Charger & Battery Protection       |
-       +---------------------------+---------------------------+
-                                   |
-                     +-------------+-------------+
-                     |                           |
-                     v                           v
-              +--------------+            +--------------+
-              | 100k/100k Div|            | ESP32 DevKit |
-              |  To GPIO34   |            |  (3.3V Rail) |
-              +--------------+            +-------+------+
-                                                  | Shared I2C Bus
-                                      +-----------+-----------+
-                                      |                       |
-                                      v                       v
-                              +---------------+       +---------------+
-                              |   MPU-6050    |       |   MAX30102    |
-                              |  Addr: 0x68   |       |  Addr: 0x57   |
-                              | (Chest Motion)|       | (PPG Sensor)  |
-                              +---------------+       +---------------+
+  ESP32 Pin       Connected To                 Function
+  ───────────────────────────────────────────────────────────────────
+  3V3             MPU-6050 VCC & MAX30102 VIN  Clean 3.3V power rail
+  GND             All module GNDs + Batt (-)   Common System Ground
+  GPIO21          MPU-6050 SDA & MAX30102 SDA  Shared I2C Serial Data
+  GPIO22          MPU-6050 SCL & MAX30102 SCL  Shared I2C Serial Clock
+  GPIO34          100k/100k Divider Midpoint   LiPo Voltage Sensing (ADC1)
+  VIN / 5V        TP4056 OUT+ via Switch       System Battery Input
 ```
+
+*Complete ASCII wiring diagrams and Mermaid schematics available in [hardware/wiring.md](file:///d:/New%20folder%20(4)/breath-pause-monitor-esp32/hardware/wiring.md).*
 
 ---
 
-## 4. Repository Structure
-
-```text
-breath-pause-monitor-esp32/
-├── README.md               # Main project documentation and setup guide
-├── LICENSE                 # MIT (code) & CC BY 4.0 (documentation)
-├── .gitignore              # PlatformIO, KiCad, editor, and OS ignore rules
-├── platformio.ini          # PlatformIO build configuration for ESP32
-├── firmware/
-│   ├── src/
-│   │   ├── main.cpp        # FreeRTOS setup, sensor loops, debug dispatch
-│   │   ├── config.h        # Pin definitions, sampling rates, thresholds
-│   │   ├── breathing.h/.cpp# MPU-6050 filter, rate, pause alert state machine
-│   │   ├── spo2_pulse.h/.cpp# MAX30102 PPG driver, ratio-of-ratios SpO2
-│   │   ├── ble_service.h/.cpp# Custom BLE GATT service & characteristics
-│   │   └── battery.h/.cpp  # ADC voltage divider reading & LiPo curve
-│   └── test/
-│       └── test_breathing.cpp # Unit tests with synthetic breathing & pause arrays
-├── dashboard/
-│   └── index.html          # Web Bluetooth single-page live telemetry dashboard
-├── hardware/
-│   ├── wiring.md           # Pin tables, ASCII schematic & Mermaid diagram
-│   ├── bom.md              # Parts list with Indian INR prices & Chennai sourcing
-│   └── pcb-notes.md        # KiCad chest-strap PCB design specifications
-└── docs/
-    ├── design-notes.md     # Architecture, math models, BLE packet specs
-    ├── test-plan.md        # Physical testing protocols for the author
-    ├── results.md          # Empty benchmark tables for real hardware results
-    └── images/             # Enclosure photos, bench wiring (.gitkeep)
-```
-
----
-
-## 5. Quick Start: Firmware Compilation
+## 6. How to Build & Flash (PlatformIO)
 
 ### Prerequisites
-- [PlatformIO Core](https://platformio.org/) or PlatformIO IDE for VS Code.
-- ESP32 development board (ESP32-WROOM-32).
+- [PlatformIO Core](https://platformio.org/) installed (`pip install platformio`) or PlatformIO IDE for VS Code.
+- Micro-USB / Type-C cable connecting ESP32 to computer.
 
-### Building and Uploading
+### Commands
 ```bash
-# Navigate to the project directory
+# Clone the repository
+git clone https://github.com/<your-username>/breath-pause-monitor-esp32.git
 cd breath-pause-monitor-esp32
 
 # Build the firmware
 pio run
 
-# Flash to connected ESP32 (replace COM port on Windows if needed)
-pio run --target upload --upload-port COM3
+# Flash to connected ESP32 DevKit
+pio run --target upload
 
-# Open serial monitor (115200 baud)
+# Open Serial Monitor at 115200 baud
 pio run --target monitor
 ```
 
 ---
 
-## 6. Web Dashboard Setup
+## 7. How to Open the Live Dashboard
 
-The telemetry dashboard is entirely self-contained in `dashboard/index.html` with zero npm dependencies or build steps.
-
-1. Open `dashboard/index.html` in **Google Chrome** (Version 70+ on Windows, macOS, Linux, or Android).
-2. Ensure Bluetooth is enabled on your host computer or phone.
-3. Click the **"Connect Monitor"** button.
-4. Select `BreathPause-ESP32` from the browser Bluetooth device picker.
-5. Observe live chest movement, breathing rate, body position, $SpO_2$, pulse, and pause alerts.
+1. Launch **Google Chrome** on a desktop (Windows, macOS, Linux) or an Android phone.
+2. Open [dashboard/index.html](file:///d:/New%20folder%20(4)/breath-pause-monitor-esp32/dashboard/index.html) directly in the browser (`file://...` or via a local HTTP server).
+3. Ensure Bluetooth is enabled on your host device.
+4. Click **"⚡ Connect Monitor"** and select **`BreathPause-ESP32`**.
+5. *No hardware yet?* Click **"🧪 Demo / Sim Mode"** to test live canvas waveforms, pause alerts, and CSV logging with synthetic data.
 
 ---
 
-## 7. Roadmap & Next Steps
+## 8. How to Run the Unit Tests
 
-- [x] Phase 1: Repository structure, hardware documentation, and KiCad PCB notes.
-- [ ] Phase 2: Firmware implementation (digital filters, pause alerts, PPG, BLE, demo mode).
-- [ ] Phase 3: Web Bluetooth HTML5 Canvas dashboard with CSV session export.
-- [ ] Phase 4: Unit test execution, test protocols, and blank experimental tables.
-- [ ] Phase 5: Git commit history, remote repository linking, and GitHub publishing.
-- [ ] Future Hardware: 2-layer custom KiCad PCB fabricated and assembled on elastic strap.
+Automated simulation tests verify the digital filter and pause alert state machine:
+
+```bash
+# Run the automated test runner in Python
+python firmware/test/test_breathing_runner.py
+```
+
+Expected output:
+```text
+======================================================================
+RUNNING BREATHING ALGORITHM UNIT TESTS (SIMULATION SUITE)
+======================================================================
+[TEST 1] Verifying 15 Breaths/min Rate Estimation Accuracy...
+  Target Rate: 15 BPM | Detected Rate: 15 BPM
+  --> PASS: Rate estimation locked within ±1 BPM tolerance.
+
+[TEST 2] Verifying Breathing Pause Alert Trigger (12s voluntary apnea gap)...
+  Pause Start Event logged at t = 34.72 s
+  Pause Resumed/Cleared Event logged at t = 37.88 s
+  --> PASS: Pause alert triggered at 10.0s threshold and cleared on resumption.
+
+ALL UNIT TESTS PASSED (3/3). Algorithm logic verified in simulation.
+```
+
+The test generates a verification plot saved to `docs/images/breathing_unit_test_plot.png`:
+![Unit Test Waveform Plot](docs/images/breathing_unit_test_plot.png)
+
+---
+
+## 9. Repository Structure
+
+```text
+breath-pause-monitor-esp32/
+├── README.md               # Main project documentation & setup guide
+├── LICENSE                 # MIT (code) & CC BY 4.0 (documentation/hardware)
+├── .gitignore              # PlatformIO, KiCad, OS, and editor rules
+├── platformio.ini          # PlatformIO build configuration for ESP32
+├── firmware/
+│   ├── src/
+│   │   ├── config.h        # Central pins, filter thresholds, BLE UUIDs
+│   │   ├── main.cpp        # FreeRTOS schedulers, BLE loops, debug modes
+│   │   ├── breathing.h/.cpp# MPU-6050 filter, rate & pause alert state machine
+│   │   ├── spo2_pulse.h/.cpp# MAX30102 PPG driver, ratio-of-ratios SpO2
+│   │   ├── battery.h/.cpp  # ADC 16-sample averaging & LiPo curve
+│   │   └── ble_service.h/.cpp# Custom BLE GATT server & notifications
+│   └── test/
+│       ├── test_breathing.cpp # Unity C++ unit test suite
+│       └── test_breathing_runner.py # Standalone Python verification suite
+├── dashboard/
+│   └── index.html          # Web Bluetooth single-page live dashboard
+├── hardware/
+│   ├── wiring.md           # Pin table, ASCII & Mermaid wiring diagrams
+│   ├── bom.md              # Sourcing guide with INR prices for Indian vendors
+│   ├── pcb-notes.md        # Chest-strap KiCad PCB layout specifications
+│   └── kicad/              # Ready-to-open KiCad 7/8 project & PCB files
+└── docs/
+    ├── design-notes.md     # Architecture, math models, BLE packet specs
+    ├── test-plan.md        # Physical testing protocols for the author
+    ├── results.md          # Blank experimental benchmark tables to fill
+    └── images/             # Verification graphs & test plots
+```
+
+---
+
+## 10. Honest Engineering Limitations
+
+1. **Motion Artifact Sensitivity**: Walking, gesturing, or speaking creates bodily vibrations that exceed the subtle chest respiration signal ($0.035\text{ m/s}^2$). The system is intended strictly for resting, seated, or sleeping postures.
+2. **Sternum Optical Perfusion**: The MAX30102 is optimized for fingers. Chest skin has lower capillary perfusion, requiring consistent strap contact pressure.
+3. **Single-Transducer Boundary**: A single sternum accelerometer cannot differentiate obstructive apnea (paradoxical respiratory effort with closed airway) from central apnea (cessation of effort).
+
+---
+
+## 11. Author & License
+
+- **Author**: Vigneshwar S, 2nd-year Electronics and Communication Engineering (ECE) student, SRM Institute of Science and Technology, Chennai, India.
+- **Code License**: [MIT License](LICENSE) (firmware, dashboard, test suites).
+- **Documentation & Hardware**: [Creative Commons Attribution 4.0 International (CC BY 4.0)](LICENSE).

@@ -1,0 +1,23 @@
+(kicad_sch (version 20230121) (generator eeschema)
+
+  (uuid 76ba7a07-0001-4000-8000-000000000001)
+
+  (paper "A4")
+
+  (title_block
+    (title "Wearable Breathing Pause Monitor (Learning Prototype)")
+    (date "2026-11-21")
+    (rev "v1.0")
+    (company "SRM Institute of Science and Technology")
+    (comment 1 "Author: Vigneshwar S (2nd-Year ECE)")
+    (comment 2 "Educational Prototype - Non-Medical Device")
+  )
+
+  (lib_symbols
+  )
+
+  (sheet_instances
+    (path "/" (page "1"))
+  )
+
+)
